@@ -148,6 +148,12 @@ if (Env::get('APP_ENV', 'local') === 'production') {
 $timezone = (string) Env::get('APP_TIMEZONE', '');
 if ($timezone !== '' && in_array($timezone, timezone_identifiers_list(), true)) {
     good('APP_TIMEZONE valid', $timezone);
+
+    // Adopt it, exactly as index.php does. Without this the clock comparison
+    // further down reads MySQL's naive datetime string in php.ini's default
+    // zone instead of the app's, and reports the difference between those two
+    // zones as clock drift that does not exist.
+    date_default_timezone_set($timezone);
 } else {
     hard('APP_TIMEZONE is missing or not a real zone', 'Every expiry check compares PHP time against MySQL NOW(). Set a real identifier, e.g. Africa/Casablanca.');
 }

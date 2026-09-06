@@ -1,0 +1,41 @@
+# Static client. No PHP here — everything is served as a file.
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(), camera=(), microphone=(self), payment=()"
+    Header always set Strict-Transport-Security "max-age=15768000; includeSubDomains" "expr=%{HTTPS} == 'on'"
+
+    # Content Security Policy.
+    #
+    # 'unsafe-inline' is in style-src because several pages set inline styles
+    # from JavaScript (chart colours, widget widths, the drag handle). It is
+    # deliberately NOT in script-src: every line of JavaScript in this app is
+    # an external module file, so a script injected into the HTML cannot run.
+    #
+    # connect-src is 'self' because the API is always a sibling of this folder
+    # on the same origin. If you ever split them across hosts, add the API's
+    # origin here or every request will be blocked with no visible error.
+    #
+    # media-src blob: covers the WAV that /voice/speak streams back.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+</IfModule>
+
+# The mascot art and the module files never change without a filename change.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpeg "access plus 30 days"
+    ExpiresByType image/png  "access plus 30 days"
+    ExpiresByType text/css   "access plus 1 hour"
+    ExpiresByType text/javascript "access plus 1 hour"
+</IfModule>
+
+# Never cache the HTML itself, so a deploy is picked up immediately.
+<FilesMatch "\.html$">
+    <IfModule mod_headers.c>
+        Header set Cache-Control "no-cache, must-revalidate"
+    </IfModule>
+</FilesMatch>

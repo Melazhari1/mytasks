@@ -540,10 +540,52 @@ final class AuthController
         setcookie(Env::get('REFRESH_COOKIE_NAME', 'mytasks_refresh') ?? 'mytasks_refresh', $value, [
             'expires'  => $expires,
             'path'     => self::refreshCookiePath(),
-            'secure'   => Env::bool('REFRESH_COOKIE_SECURE', false),
+            'secure'   => self::cookieShouldBeSecure(),
             'httponly' => true,
             'samesite' => Env::get('REFRESH_COOKIE_SAMESITE', 'Lax') ?? 'Lax',
         ]);
+    }
+
+    /**
+     * Whether the refresh cookie gets the Secure flag.
+     *
+     * REFRESH_COOKIE_SECURE=true forces it on. Otherwise it is decided from
+     * the live request, because the alternative fails in both directions:
+     * leaving it false on an HTTPS deployment ships the long-lived session
+     * credential over a flag that permits plain HTTP, and forcing it true on
+     * plain-HTTP local development makes the browser drop the cookie outright,
+     * which looks exactly like "sessions randomly expire after 15 minutes".
+     *
+     * Most managed hosts terminate TLS at a proxy, so $_SERVER['HTTPS'] is
+     * unset even though the browser is on HTTPS — hence the forwarded headers.
+     * They are only trusted when TRUSTED_PROXY=true, since a client can send
+     * X-Forwarded-Proto itself.
+     */
+    private static function cookieShouldBeSecure(): bool
+    {
+        if (Env::bool('REFRESH_COOKIE_SECURE', false)) {
+            return true;
+        }
+
+        if (($_SERVER['HTTPS'] ?? '') !== '' && strtolower((string) $_SERVER['HTTPS']) !== 'off') {
+            return true;
+        }
+
+        if (Env::bool('TRUSTED_PROXY', false)) {
+            $proto = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+
+            if ($proto !== '') {
+                // A proxy chain sends a comma-separated list; the client's own
+                // scheme is the first entry.
+                return str_starts_with($proto, 'https');
+            }
+
+            if (strtolower((string) ($_SERVER['HTTP_X_FORWARDED_SSL'] ?? '')) === 'on') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

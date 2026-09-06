@@ -1,10 +1,19 @@
-# Route every request that isn't a real file/directory into index.php
+# Front-controller rewrite.
+#
+# There is deliberately no RewriteBase here. Apache infers it from the
+# directory this file sits in, so the API works unchanged at a domain root
+# (https://api.example.com/), in a subfolder (https://example.com/api/), or
+# under a deep local path (http://localhost/xxx/mytasks/api/). Request::path()
+# derives the mount point from SCRIPT_NAME the same way, so PHP and Apache
+# always agree about where the app starts.
+#
+# If a host's AllowOverride is strict enough that the rewrite misbehaves, set
+# RewriteBase to the URL path of this folder — and remember it is then one
+# more thing to change when the app moves.
+
 RewriteEngine On
 
-# Apache under a subfolder needs the base set explicitly.
-RewriteBase /xxp/mytasks/api/
-
-# Pass the Authorization header through to PHP (mod_php / CGI both covered).
+# Pass the Authorization header through to PHP (mod_php and CGI both covered).
 RewriteCond %{HTTP:Authorization} ^(.*)$
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
 SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
@@ -13,18 +22,30 @@ RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.php [QSA,L]
 
-# Never serve secrets, logs, or source directly.
+# Secrets are never served, whatever the rewrite does.
+#
+# src/, routes/, database/, storage/ and tools/ are not listed here: each has
+# its own "Require all denied" .htaccess, so the guard lives with the folder
+# instead of in a path pattern that silently stops matching when the app moves.
 <FilesMatch "^(\.env|\.env\..*|composer\.(json|lock))$">
     Require all denied
 </FilesMatch>
 
 RedirectMatch 404 /\.git
-RedirectMatch 404 ^/xxp/mytasks/api/(src|config|routes|database|storage)/
 
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "no-referrer"
     Header always unset X-Powered-By
+
+    # HSTS. Only emitted over HTTPS — sending it on plain HTTP is ignored by
+    # browsers anyway, and setting it during local development would pin
+    # localhost to HTTPS for six months.
+    Header always set Strict-Transport-Security "max-age=15768000; includeSubDomains" "expr=%{HTTPS} == 'on'"
 </IfModule>
+
+# Directory listings off, in case mod_rewrite is unavailable.
+Options -Indexes
 
 # Default to UTF-8 JSON
 AddDefaultCharset UTF-8

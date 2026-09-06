@@ -1,0 +1,17 @@
+# Normalise line endings on the way into the repo.
+#
+# This project is written on Windows and deployed to Linux. Committing CRLF
+# and checking it out on a server is mostly harmless for PHP, but Apache can
+# choke on a CRLF .htaccess directive and a CRLF shell script will not run at
+# all. Storing everything as LF removes the whole class of problem.
+* text=auto eol=lf
+
+# Binary — never touch.
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.gif  binary
+*.ico  binary
+*.zip  binary
+*.onnx binary
+*.bin  binary

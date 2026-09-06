@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Settings · MyTasks</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <style>
+    .settings { display: grid; gap: 16px; max-width: 780px; }
+    .setting-row {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 16px 0; border-bottom: 1px solid var(--border);
+    }
+    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-row__text { min-width: 0; }
+    .setting-row__text b { display: block; font-size: 0.9rem; }
+    .setting-row__text p { font-size: 0.81rem; color: var(--text-secondary); margin-top: 3px; }
+    .setting-row__action { margin-left: auto; flex: none; display: flex; gap: 8px; align-items: center; }
+    .status-dot {
+      display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      margin-right: 7px; vertical-align: 0px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" data-shell="sidebar"></aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar__title">
+          <h1>Settings</h1>
+          <p>Account, security and appearance.</p>
+        </div>
+      </header>
+
+      <div class="settings">
+        <section class="card">
+          <div class="card__head"><h2>Account</h2></div>
+          <p class="card__sub">Who you are signed in as.</p>
+          <div data-slot="account"></div>
+        </section>
+
+        <section class="card">
+          <div class="card__head"><h2>Two-factor authentication</h2></div>
+          <p class="card__sub">
+            The second gate after your password. An authenticator app beats emailed codes —
+            it keeps working when your inbox is compromised.
+          </p>
+          <div data-slot="twofa"></div>
+        </section>
+
+        <section class="card">
+          <div class="card__head"><h2>Vault security</h2></div>
+          <p class="card__sub">An extra lock in front of your stored passwords.</p>
+          <div data-slot="vault"></div>
+        </section>
+
+        <section class="card">
+          <div class="card__head"><h2>Devices</h2></div>
+          <p class="card__sub">
+            Phones enrolled for fingerprint or face sign-in. The biometric check happens
+            on the device — this server never sees it.
+          </p>
+          <div data-slot="devices"></div>
+        </section>
+
+        <section class="card">
+          <div class="card__head"><h2>Backups</h2></div>
+          <p class="card__sub">
+            One archive with every project file and a full database dump, optionally
+            pushed to Google Drive. A server-operator feature, not a per-account one —
+            see below.
+          </p>
+          <div data-slot="backups"></div>
+        </section>
+
+        <section class="card">
+          <div class="card__head"><h2>Appearance</h2></div>
+          <p class="card__sub">Dark is native. Light is a separately picked palette, not an inverted one.</p>
+          <div data-slot="appearance"></div>
+        </section>
+
+        <section class="card">
+          <div class="card__head"><h2>Sessions</h2></div>
+          <p class="card__sub">Sign out here, or everywhere at once.</p>
+          <div data-slot="sessions"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/page-settings.js"></script>
+</body>
+</html>

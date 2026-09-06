@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Budget · MyTasks</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <style>
+    .budget-score__value { font-size: 2.4rem; font-weight: 800; line-height: 1; }
+    .budget-score__scale { font-size: 1.1rem; color: var(--text-muted); font-weight: 600; }
+
+    .breakdown-row {
+      display: grid; grid-template-columns: 90px 1fr 150px; align-items: center;
+      gap: 14px; padding: 10px 0;
+    }
+    .breakdown-row + .breakdown-row { border-top: 1px solid var(--border); }
+    .breakdown-row__bar {
+      position: relative; height: 10px; border-radius: 6px;
+      background: var(--surface-3); overflow: hidden;
+    }
+    .breakdown-row__real { position: absolute; inset: 0; border-radius: 6px; }
+    .breakdown-row__target {
+      position: absolute; top: -3px; bottom: -3px; width: 2px;
+      background: var(--text-primary); opacity: .55;
+    }
+    .breakdown-row__nums { text-align: right; font-size: 0.81rem; color: var(--text-secondary); white-space: nowrap; }
+    .breakdown-row__nums b { color: var(--text-primary); }
+
+    .salary-row { display: flex; gap: 10px; align-items: center; }
+    .salary-row input { max-width: 160px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" data-shell="sidebar"></aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar__title">
+          <h1>Budget</h1>
+          <p data-slot="subtitle">Salary, spending, and how close you kept to 50/30/20.</p>
+        </div>
+        <div class="topbar__actions">
+          <button class="btn btn--primary" data-action="new-entry"></button>
+        </div>
+      </header>
+
+      <div class="filters">
+        <label class="visually-hidden" for="b-month">Month</label>
+        <select id="b-month">
+          <option value="1">January</option><option value="2">February</option>
+          <option value="3">March</option><option value="4">April</option>
+          <option value="5">May</option><option value="6">June</option>
+          <option value="7">July</option><option value="8">August</option>
+          <option value="9">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+
+        <label class="visually-hidden" for="b-year">Year</label>
+        <select id="b-year"></select>
+      </div>
+
+      <div class="grid grid--2" style="margin-bottom:16px">
+        <section class="card">
+          <div class="card__head"><h2>Salary</h2></div>
+          <p class="card__sub">What you brought in this month.</p>
+          <div class="salary-row">
+            <input type="number" id="b-salary" min="0" step="0.01" placeholder="0.00">
+            <button class="btn btn--ghost" data-action="save-salary">Save</button>
+          </div>
+        </section>
+
+        <article class="tile" style="--tile-accent:var(--text-muted)">
+          <div class="tile__label">Score this month</div>
+          <div class="budget-score__value" data-slot="score">—<span class="budget-score__scale"> / 5</span></div>
+          <div class="tile__foot" data-slot="score-note">Set a salary to get a score.</div>
+        </article>
+      </div>
+
+      <section class="card" style="margin-bottom:16px">
+        <div class="card__head"><h2>Standard vs. real</h2></div>
+        <p class="card__sub">The 50/30/20 rule — need / want / save, as a share of salary. The thin line marks the target.</p>
+        <div data-slot="breakdown"></div>
+      </section>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px 0"><h2 style="font-size:1rem">Entries</h2></div>
+        <div data-slot="entries"></div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/page-budget.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+# Route every request that isn't a real file/directory into index.php
+RewriteEngine On
+
+# Apache under a subfolder needs the base set explicitly.
+RewriteBase /xxp/mytasks/api/
+
+# Pass the Authorization header through to PHP (mod_php / CGI both covered).
+RewriteCond %{HTTP:Authorization} ^(.*)$
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
+# Never serve secrets, logs, or source directly.
+<FilesMatch "^(\.env|\.env\..*|composer\.(json|lock))$">
+    Require all denied
+</FilesMatch>
+
+RedirectMatch 404 /\.git
+RedirectMatch 404 ^/xxp/mytasks/api/(src|config|routes|database|storage)/
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always unset X-Powered-By
+</IfModule>
+
+# Default to UTF-8 JSON
+AddDefaultCharset UTF-8

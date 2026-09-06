@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Cat Assistant · MyTasks</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="icon" type="image/png" href="../web/assets/img/favicon.png">
+</head>
+<body>
+  <div class="launch" data-slot="launch">
+    <div class="launch__card">
+      <div class="launch__avatar" data-slot="launch-avatar"></div>
+      <h1>Cat Assistant</h1>
+      <p data-slot="launch-status">Checking your session…</p>
+      <button type="button" class="btn btn--accent" data-action="launch" hidden>Open Cat Assistant</button>
+      <p class="launch__note" data-slot="wake-status" hidden></p>
+      <p class="launch__note" data-slot="launch-note" hidden></p>
+    </div>
+  </div>
+
+  <div id="widget-host"></div>
+
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

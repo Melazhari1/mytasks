@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Sign in · MyTasks</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+</head>
+<body>
+  <main class="auth-shell">
+    <!-- Left: the mascot, doing what the poster does -->
+    <aside class="auth-art">
+      <div class="auth-art__inner">
+        <div data-slot="cat"></div>
+        <h2 class="auth-art__title">My<span style="color:var(--accent)">Tasks</span></h2>
+        <p class="auth-art__sub">Your goals and your secrets, behind one door.</p>
+
+        <ul class="auth-art__points" data-slot="points"></ul>
+      </div>
+    </aside>
+
+    <!-- Right: the actual form -->
+    <section class="auth-form-pane">
+      <div class="auth-card">
+        <div class="auth-card__brand">
+          <div data-slot="badge"></div>
+          <div class="auth-card__brand-name">My<em>Tasks</em></div>
+          <button class="icon-btn" data-theme-toggle style="margin-left:auto"></button>
+        </div>
+
+        <div class="alert alert--error" data-slot="error" hidden></div>
+        <div class="alert alert--ok" data-slot="notice" hidden></div>
+
+        <!-- Step 1: credentials -->
+        <form data-step="login">
+          <h1>Welcome back</h1>
+          <p class="auth-card__lead">Sign in to pick up where you left off.</p>
+
+          <div class="field">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" name="email" autocomplete="username" required
+                   placeholder="you@example.com">
+          </div>
+
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" name="password" autocomplete="current-password"
+                   required placeholder="••••••••">
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block">Continue</button>
+
+          <p class="field__hint" style="margin-top:18px;text-align:center">
+            No account yet? <a href="#" data-go="register">Create one</a>
+          </p>
+        </form>
+
+        <!-- Step 2: the second factor -->
+        <form data-step="verify" hidden>
+          <h1>Two-factor check</h1>
+          <p class="auth-card__lead" data-slot="verify-lead"></p>
+
+          <div class="field">
+            <label for="otp-code">Verification code</label>
+            <input type="text" id="otp-code" class="otp-input" inputmode="numeric"
+                   autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required
+                   placeholder="000000">
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block">Verify &amp; sign in</button>
+
+          <div style="display:flex;gap:12px;justify-content:space-between;margin-top:16px">
+            <button type="button" class="chart-table-toggle" data-go="login">← Back</button>
+            <button type="button" class="chart-table-toggle" data-action="resend" hidden>Resend code</button>
+          </div>
+        </form>
+
+        <!-- Registration -->
+        <form data-step="register" hidden>
+          <h1>Create your account</h1>
+          <p class="auth-card__lead">One account covers tasks, goals and the vault.</p>
+
+          <div class="field">
+            <label for="reg-name">Name <span style="text-transform:none;font-weight:400">(optional)</span></label>
+            <input type="text" id="reg-name" name="name" autocomplete="name" placeholder="Mohamed">
+          </div>
+
+          <div class="field">
+            <label for="reg-email">Email</label>
+            <input type="email" id="reg-email" name="email" autocomplete="username" required
+                   placeholder="you@example.com">
+          </div>
+
+          <div class="field">
+            <label for="reg-password">Password</label>
+            <input type="password" id="reg-password" name="password" autocomplete="new-password"
+                   required minlength="8" placeholder="At least 8 characters">
+            <span class="field__hint">Hashed with Argon2id. It never leaves the server in readable form.</span>
+          </div>
+
+          <button type="submit" class="btn btn--primary btn--block">Create account</button>
+
+          <p class="field__hint" style="margin-top:18px;text-align:center">
+            Already registered? <a href="#" data-go="login">Sign in</a>
+          </p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="assets/js/page-login.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+# Nothing in this folder is ever served over HTTP.
+# Kept inside the folder so the guard travels with it, rather than
+# depending on a hardcoded path in api/.htaccess.
+Require all denied

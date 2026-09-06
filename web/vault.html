@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Vault · MyTasks</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" data-shell="sidebar"></aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar__title">
+          <h1>Vault</h1>
+          <p data-slot="subtitle">Credentials, encrypted at rest.</p>
+        </div>
+        <div class="topbar__actions">
+          <button class="btn btn--ghost" data-action="generate"></button>
+          <button class="btn btn--ghost" data-action="import"></button>
+          <input type="file" accept=".csv,text/csv" data-slot="import-file" hidden>
+          <button class="btn btn--primary" data-action="new-entry"></button>
+        </div>
+      </header>
+
+      <!-- Lock state is the first thing on the page, never buried in a menu -->
+      <div class="vault-lockbar" data-slot="lockbar" data-state="locked"></div>
+
+      <div class="filters">
+        <label class="visually-hidden" for="v-search">Search</label>
+        <input type="text" id="v-search" placeholder="Search platforms or usernames…" style="min-width:250px">
+      </div>
+
+      <div class="card" style="padding:0;overflow:hidden">
+        <div data-slot="list"></div>
+      </div>
+
+      <p style="margin-top:18px;font-size:.8rem;color:var(--text-muted);max-width:70ch">
+        Passwords are sealed with AES-256-CBC plus an HMAC tag before they reach MySQL.
+        The server holds the key, so a stolen database dump on its own decrypts nothing.
+        Every reveal is rate limited and written to the audit log.
+      </p>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/page-vault.js"></script>
+</body>
+</html>

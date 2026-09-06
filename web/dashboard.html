@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Dashboard · MyTasks</title>
+  <link rel="stylesheet" href="assets/css/app.css">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" data-shell="sidebar"></aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar__title">
+          <h1 data-slot="greeting">Dashboard</h1>
+          <p data-slot="subtitle">Loading your day…</p>
+        </div>
+        <div class="topbar__actions">
+          <button class="btn btn--ghost" data-action="reset-layout" hidden></button>
+          <button class="btn btn--ghost" data-action="refresh"></button>
+          <button class="btn btn--primary" data-action="new-task"></button>
+        </div>
+      </header>
+
+      <!-- Each [data-widget] is drag-reorderable by its grip handle, width-
+           toggleable by the expand/collapse button, and (card widgets) resizable
+           by dragging their bottom-right corner. All persist to localStorage —
+           see page-dashboard.js. -->
+      <div class="widgets-grid" data-slot="widgets">
+
+        <section class="widget widget--full" data-widget="tiles">
+          <div class="widget__head">
+            <button type="button" class="widget__handle" data-widget-toggle-width aria-label="Widen or narrow Key numbers"></button>
+            <button type="button" class="widget__handle" data-drag-handle aria-label="Drag to reorder Key numbers"></button>
+          </div>
+          <!-- Stat tiles: the number is the chart. No sparkline, no one-bar bar. -->
+          <div class="grid grid--tiles" data-slot="tiles" aria-label="Key numbers"></div>
+        </section>
+
+        <section class="widget widget--full card" data-widget="activity">
+          <div class="card__head">
+            <h2>Activity</h2>
+            <span class="card__meta">last 14 days</span>
+            <button type="button" class="widget__handle" data-widget-toggle-width aria-label="Widen or narrow Activity"></button>
+            <button type="button" class="widget__handle" data-drag-handle aria-label="Drag to reorder Activity"></button>
+          </div>
+          <p class="card__sub">Tasks created against tasks completed, by day.</p>
+          <div data-slot="chart-activity"></div>
+        </section>
+
+        <section class="widget card" data-widget="priority">
+          <div class="card__head">
+            <h2>Open work by priority</h2>
+            <button type="button" class="widget__handle" data-widget-toggle-width aria-label="Widen or narrow Open work by priority"></button>
+            <button type="button" class="widget__handle" data-drag-handle aria-label="Drag to reorder Open work by priority"></button>
+          </div>
+          <p class="card__sub">Pending tasks only — completed work has left the queue.</p>
+          <div data-slot="chart-priority"></div>
+        </section>
+
+        <section class="widget card" data-widget="categories">
+          <div class="card__head">
+            <h2>Open work by goal</h2>
+            <button type="button" class="widget__handle" data-widget-toggle-width aria-label="Widen or narrow Open work by goal"></button>
+            <button type="button" class="widget__handle" data-drag-handle aria-label="Drag to reorder Open work by goal"></button>
+          </div>
+          <p class="card__sub">Where your pending tasks are concentrated.</p>
+          <div data-slot="chart-categories"></div>
+        </section>
+
+        <section class="widget card" data-widget="upcoming">
+          <div class="card__head">
+            <h2>Up next</h2>
+            <a class="card__meta" href="tasks.html">All tasks →</a>
+            <button type="button" class="widget__handle" data-widget-toggle-width aria-label="Widen or narrow Up next"></button>
+            <button type="button" class="widget__handle" data-drag-handle aria-label="Drag to reorder Up next"></button>
+          </div>
+          <p class="card__sub">The soonest deadlines still open.</p>
+          <div data-slot="upcoming"></div>
+        </section>
+
+        <section class="widget card" data-widget="progress">
+          <div class="card__head">
+            <h2>Overall progress</h2>
+            <button type="button" class="widget__handle" data-widget-toggle-width aria-label="Widen or narrow Overall progress"></button>
+            <button type="button" class="widget__handle" data-drag-handle aria-label="Drag to reorder Overall progress"></button>
+          </div>
+          <p class="card__sub">Completed against everything you've ever added.</p>
+          <div data-slot="meter"></div>
+          <div data-slot="meter-note" style="text-align:center;font-size:.8rem;color:var(--text-muted)"></div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="assets/js/page-dashboard.js"></script>
+</body>
+</html>

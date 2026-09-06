@@ -1,0 +1,22 @@
+# Project root guard.
+#
+# api/.htaccess protects the API's own folders; this covers everything that
+# sits beside it in the web root — archives, VCS metadata, the Python
+# launcher, and the third-party engines that were cloned inside www/ rather
+# than next to it.
+
+# Source/backup archives are never meant to be downloadable.
+<FilesMatch "\.(zip|tar|tar\.gz|tgz|7z|rar|sql|log|bak|old)$">
+    Require all denied
+</FilesMatch>
+
+# Dotfiles and the launcher.
+<FilesMatch "^(\.|launch\.py$|dev-server\.php$)">
+    Require all denied
+</FilesMatch>
+
+RedirectMatch 404 /\.git
+RedirectMatch 404 /_to_delete(/|$)
+
+# Directory listings off, everywhere below here.
+Options -Indexes

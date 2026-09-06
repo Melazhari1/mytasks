@@ -1,0 +1,16 @@
+# Secrets — never commit. Losing APP_KEY means losing every vault password.
+.env
+
+# Runtime
+storage/logs/*.log
+storage/backups/*.zip
+
+# Google service-account key — as sensitive as .env
+*service-account*.json
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+.DS_Store

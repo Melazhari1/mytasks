@@ -102,7 +102,20 @@ final class AuthController
 
         if ($method === 'email') {
             $code = OtpCode::issue((int) $user['id'], 'login');
-            Mailer::sendOtp((string) $user['email'], $code, Env::int('OTP_TTL', 300));
+
+            // A delivery failure has to be visible. Handing back a challenge
+            // token for a code that was never sent leaves the user staring at
+            // a code field nothing will ever satisfy, and the real cause is
+            // buried in a server log they cannot read.
+            if (!Mailer::sendOtp((string) $user['email'], $code, Env::int('OTP_TTL', 300))) {
+                Audit::record((int) $user['id'], 'login.otp_send_failed', null, $request);
+
+                throw new HttpException(
+                    503,
+                    'otp_delivery_failed',
+                    'We could not send your verification code right now. Please try again in a moment.'
+                );
+            }
         }
 
         Audit::record((int) $user['id'], 'login.2fa_required', $method, $request);
@@ -189,7 +202,14 @@ final class AuthController
         }
 
         $code = OtpCode::issue($userId, 'login');
-        Mailer::sendOtp((string) $user['email'], $code, Env::int('OTP_TTL', 300));
+
+        if (!Mailer::sendOtp((string) $user['email'], $code, Env::int('OTP_TTL', 300))) {
+            throw new HttpException(
+                503,
+                'otp_delivery_failed',
+                'We could not send your verification code right now. Please try again in a moment.'
+            );
+        }
 
         Response::message('A new verification code is on its way.');
     }

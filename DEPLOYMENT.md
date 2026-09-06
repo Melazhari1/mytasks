@@ -204,7 +204,53 @@ see that the browser is on HTTPS.
 
 ---
 
-## 6. Cron
+## 6. Email — two-factor depends on it
+
+Sign-in codes go out over SMTP. Until this works, **nobody can complete a
+login**: the code is generated, the account is fine, and the email never
+arrives.
+
+```ini
+MAIL_DRIVER=smtp
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587
+MAIL_ENCRYPTION=tls
+MAIL_USERNAME=no-reply@example.com
+MAIL_PASSWORD=an-app-password
+MAIL_FROM_ADDRESS=no-reply@example.com
+MAIL_FROM_NAME="MyTasks"
+```
+
+Port and encryption must agree: **587 with `tls`** (STARTTLS) or **465 with
+`ssl`** (implicit TLS). Mismatched, the connection hangs until `MAIL_TIMEOUT`
+instead of failing cleanly — `preflight` now catches that pair specifically.
+
+Prove it before you rely on it:
+
+```bash
+php api/tools/mailtest.php you@example.com --verbose
+```
+
+That sends a real code through the exact path `/auth/login` uses and prints
+the whole SMTP conversation (credentials withheld), so a rejection tells you
+which step objected.
+
+**Deliverability.** A code that lands in spam is the same as a code that never
+arrived. Publish an SPF record for the sending domain, and DKIM if your
+provider offers it. Send from a domain you control — `MAIL_FROM_ADDRESS` on a
+`.local` domain is rejected outright, and most providers require it to match
+`MAIL_USERNAME`.
+
+Gmail and Outlook both reject your normal account password here. Create an
+app password and put that in `MAIL_PASSWORD`.
+
+A delivery failure is now a `503 otp_delivery_failed` rather than a challenge
+token for a code that was never sent, so a broken mail config shows up
+immediately instead of as users who "can't log in".
+
+---
+
+## 7. Cron
 
 Two jobs. The first is not optional — without it, reminders never fire and
 four tables grow without bound.
@@ -222,7 +268,7 @@ cron writes stay readable by the app.
 
 ---
 
-## 7. Verify
+## 8. Verify
 
 ```bash
 php api/tools/preflight.php --production --url=https://tasks.example.com/api
@@ -246,7 +292,7 @@ and sign out.
 
 ---
 
-## 8. Backups are not backups until you restore one
+## 9. Backups are not backups until you restore one
 
 Do this once, now, before you rely on it:
 
@@ -269,7 +315,7 @@ rm -rf /tmp/restore-drill
 
 ---
 
-## 9. The optional local services
+## 10. The optional local services
 
 Ollama, whisper.cpp and Piper are localhost processes with no authentication
 of their own. On typical shared or managed hosting they will not be running —
@@ -284,14 +330,14 @@ your server.
 
 ---
 
-## 10. Ongoing
+## 11. Ongoing
 
 | Cadence | Task |
 | --- | --- |
 | Every deploy | `php tools/migrate.php`, then `preflight --production` |
 | Weekly | Skim `storage/logs/php-error.log`; confirm the backup cron is producing files |
 | Monthly | `SELECT action, COUNT(*) FROM audit_logs WHERE created_at > NOW() - INTERVAL 30 DAY GROUP BY action` — `login.failed` and `vault.unlock_failed` spikes are the interesting ones |
-| Quarterly | Restore drill (§8). Confirm `APP_KEY` is still backed up where you think it is |
+| Quarterly | Restore drill (§9). Confirm `APP_KEY` is still backed up where you think it is |
 | On any suspicion | `POST /auth/logout-all`, rotate `JWT_SECRET` (kills all sessions; harmless), rotate the DB password. **Never `APP_KEY`** |
 
 ---

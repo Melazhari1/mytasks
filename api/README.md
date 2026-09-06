@@ -88,13 +88,17 @@ api/
 ├── database/schema.sql        full schema, import-ready
 ├── src/
 │   ├── Core/                  Router, Request, Response, Database, Env, Autoloader
-│   ├── Support/               Crypto, Jwt, Totp, Validator, RateLimiter, Mailer, Audit
+│   ├── Support/               Crypto, Jwt, Totp, Validator, RateLimiter, Mailer, Smtp, Audit
 │   ├── Middleware/            AuthMiddleware, VaultUnlockMiddleware
 │   ├── Models/                data access — every query is a bound prepared statement
 │   └── Controllers/           Auth, Category, Task, Vault
 ├── tools/
 │   ├── keygen.php             generate APP_KEY / JWT_SECRET
 │   ├── selftest.php           crypto + JWT + TOTP tests (no DB needed)
+│   ├── smoketest.php          end-to-end HTTP tests, incl. cross-account access
+│   ├── preflight.php          deployment readiness gate
+│   ├── mailtest.php           send a real code to a real inbox
+│   ├── migrate.php            apply database/migrations/*.sql
 │   └── reminders.php          cron worker: fire due reminders, prune expired rows
 └── storage/logs/              php-error.log, mail.log
 ```
@@ -398,6 +402,51 @@ Linux cron:
 
 It sends email through `Mailer` by default. Swap the `notify()` function for
 FCM or APNs when the mobile push channel is ready.
+
+---
+
+## Email
+
+Two-factor codes are only as useful as the delivery behind them. Three drivers:
+
+| `MAIL_DRIVER` | Behaviour |
+| --- | --- |
+| `log` | Appends to `storage/logs/mail.log`. The development default — you want to *read* the code, not receive it. |
+| `smtp` | A real mail server, via [Smtp](src/Support/Smtp.php) — raw sockets, no dependency, STARTTLS or implicit TLS, AUTH LOGIN/PLAIN. |
+| `mail` | PHP's `mail()`. Needs a local MTA; WAMP almost never has one. |
+
+Anything else is an error, not a silent fall back to the log file — a typo in
+`.env` must not quietly stop every sign-in code while the API keeps answering
+"we sent you a code".
+
+```ini
+MAIL_DRIVER=smtp
+MAIL_HOST=smtp.example.com
+MAIL_PORT=587          # 587 with tls, or 465 with ssl — the pair must match
+MAIL_ENCRYPTION=tls
+MAIL_USERNAME=no-reply@example.com
+MAIL_PASSWORD=an-app-password
+MAIL_TIMEOUT=15
+```
+
+Verify before trusting it:
+
+```bash
+php tools/mailtest.php you@example.com --verbose
+```
+
+That sends a real code through the same path `/auth/login` uses and prints the
+SMTP conversation, credentials withheld. Gmail and Outlook reject account
+passwords here — create an app password. Most providers also require
+`MAIL_FROM_ADDRESS` to be on the same domain as `MAIL_USERNAME`.
+
+The code email is `multipart/alternative`: a plain-text part carrying the
+digits, and an HTML part styled with inline attributes and a table, which is
+what mail clients actually render.
+
+If delivery fails, `/auth/login`, `/auth/resend-otp` and
+`/vault/unlock/request-otp` return **503 `otp_delivery_failed`** rather than a
+challenge token for a code that was never sent.
 
 ---
 

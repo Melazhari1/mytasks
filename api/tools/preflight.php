@@ -181,10 +181,59 @@ if (!$secure) {
     soft('REFRESH_COOKIE_SECURE is not forced on', 'On HTTPS it is now detected per request, but setting it true is the explicit guarantee.');
 }
 
-if (Env::get('MAIL_DRIVER', 'log') === 'log') {
-    soft('MAIL_DRIVER is log', 'OTP codes are written to storage/logs/mail.log instead of being emailed. Nobody but you can sign in.');
+$mailDriver = strtolower(trim((string) Env::get('MAIL_DRIVER', 'log')));
+
+if (!in_array($mailDriver, ['smtp', 'mail', 'log'], true)) {
+    hard("MAIL_DRIVER '{$mailDriver}' is not a driver", 'Valid values are smtp, mail, log. Anything else sends nothing at all, so no one can complete two-factor sign-in.');
+} elseif ($mailDriver === 'log') {
+    soft('MAIL_DRIVER is log', 'OTP codes are written to storage/logs/mail.log instead of being emailed. Nobody but someone with server access can sign in.');
+} elseif ($mailDriver === 'mail') {
+    soft('MAIL_DRIVER is mail', "PHP's mail() needs a working local MTA and its messages are frequently spam-filtered. Prefer smtp.");
 } else {
-    good('MAIL_DRIVER is ' . Env::get('MAIL_DRIVER'));
+    good('MAIL_DRIVER is smtp');
+
+    $mailHost       = (string) Env::get('MAIL_HOST', '');
+    $mailEncryption = strtolower((string) Env::get('MAIL_ENCRYPTION', 'tls'));
+    $mailPort       = Env::int('MAIL_PORT', $mailEncryption === 'ssl' ? 465 : 587);
+
+    if ($mailHost === '') {
+        hard('MAIL_HOST is empty while MAIL_DRIVER=smtp', 'Nothing can be delivered. Set your provider\'s SMTP host.');
+    } else {
+        good('MAIL_HOST set', $mailHost . ':' . $mailPort);
+    }
+
+    if (!in_array($mailEncryption, ['tls', 'ssl', 'none'], true)) {
+        hard("MAIL_ENCRYPTION '{$mailEncryption}' is not valid", 'Use tls (STARTTLS, port 587), ssl (implicit TLS, port 465), or none.');
+    } elseif ($mailEncryption === 'none') {
+        soft('MAIL_ENCRYPTION is none', 'Credentials and the codes themselves cross the network in the clear. Only acceptable to a relay on localhost.');
+    } elseif (($mailEncryption === 'tls' && $mailPort === 465) || ($mailEncryption === 'ssl' && $mailPort === 587)) {
+        // The classic misconfiguration: it does not error, it hangs.
+        hard("MAIL_ENCRYPTION={$mailEncryption} with port {$mailPort} is the wrong pair", 'Use 587 with tls, or 465 with ssl. Mismatched, the connection hangs until MAIL_TIMEOUT rather than failing cleanly.');
+    } else {
+        good('encryption and port agree', $mailEncryption . '/' . $mailPort);
+    }
+
+    if ((string) Env::get('MAIL_USERNAME', '') === '' && (string) Env::get('MAIL_PASSWORD', '') === '') {
+        soft('SMTP credentials are empty', 'Fine only for a relay that authenticates by IP. Otherwise set MAIL_USERNAME and MAIL_PASSWORD.');
+    } else {
+        good('SMTP credentials set');
+    }
+
+    if (!extension_loaded('openssl') && $mailEncryption !== 'none') {
+        hard('openssl is missing but MAIL_ENCRYPTION is ' . $mailEncryption, 'TLS cannot be negotiated, so no mail can be sent.');
+    }
+
+    soft('SMTP delivery is not proven by this check', 'Run: php tools/mailtest.php you@example.com --verbose');
+}
+
+$fromAddress = (string) Env::get('MAIL_FROM_ADDRESS', '');
+
+if (!filter_var($fromAddress, FILTER_VALIDATE_EMAIL)) {
+    hard('MAIL_FROM_ADDRESS is not a valid address', 'Every OTP is sent from it; an invalid one is rejected by the receiving server.');
+} elseif (str_ends_with($fromAddress, '.local') || str_ends_with($fromAddress, 'localhost')) {
+    soft('MAIL_FROM_ADDRESS is ' . $fromAddress, 'A non-routable domain gets refused or spam-filtered. Use an address on a domain you control.');
+} else {
+    good('MAIL_FROM_ADDRESS set', $fromAddress);
 }
 
 if (!Env::bool('TWO_FACTOR_REQUIRED', true)) {

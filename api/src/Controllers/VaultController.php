@@ -162,7 +162,14 @@ final class VaultController
         RateLimiter::hit('vault-otp:' . $userId, 3, 300);
 
         $code = OtpCode::issue($userId, 'vault_unlock');
-        Mailer::sendOtp((string) $user['email'], $code, Env::int('OTP_TTL', 300));
+
+        if (!Mailer::sendOtp((string) $user['email'], $code, Env::int('OTP_TTL', 300))) {
+            throw new HttpException(
+                503,
+                'otp_delivery_failed',
+                'We could not send your unlock code right now. Please try again in a moment.'
+            );
+        }
 
         Response::message('A vault unlock code has been sent to your email.');
     }

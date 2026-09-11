@@ -1,22 +1,53 @@
-# Project root guard.
+# Project root.
 #
-# api/.htaccess protects the API's own folders; this covers everything that
-# sits beside it in the web root — archives, VCS metadata, the Python
-# launcher, and the third-party engines that were cloned inside www/ rather
-# than next to it.
+# Serves the web client at the domain root, so the app lives at
+# https://example.com/ rather than https://example.com/web/, while keeping
+# api/ and cat-assistant/ reachable at their own paths.
+#
+# Why a rewrite and not "DocumentRoot /var/www/mytasks/web" + "Alias /api":
+# under an Alias the filesystem path stops matching the URL path, and Apache's
+# per-directory rewrite can no longer infer the URL prefix -- api/.htaccess
+# would need "RewriteBase /api" hardcoded back into it, which is exactly the
+# thing that breaks the day the app moves. Keeping api/ a real subdirectory of
+# the document root means its rewrite keeps working with no configuration.
 
-# Source/backup archives are never meant to be downloadable.
+RewriteEngine On
+
+# 1. Anything that belongs to a real top-level folder is served from it.
+#    Listing web/ here is also the loop guard: after rule 3 rewrites
+#    /dashboard.html to web/dashboard.html, the request re-enters here and
+#    this rule stops it.
+RewriteRule ^(api|cat-assistant|web)(/|$) - [L]
+
+# 2. The bare domain is the sign-in page.
+RewriteRule ^$ web/index.html [L]
+
+# 3. Everything else comes from web/, with the URL left clean.
+RewriteRule ^(.*)$ web/$1 [L]
+
+# ---------------------------------------------------------------------------
+# Nothing below the app itself is ever served.
+# ---------------------------------------------------------------------------
+
+# Source/backup archives, database dumps, logs.
 <FilesMatch "\.(zip|tar|tar\.gz|tgz|7z|rar|sql|log|bak|old)$">
     Require all denied
 </FilesMatch>
 
-# Dotfiles and the launcher.
+# Dotfiles, the launcher, the no-Apache dev server, and project documentation.
 <FilesMatch "^(\.|launch\.py$|dev-server\.php$)">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(md|py)$">
     Require all denied
 </FilesMatch>
 
 RedirectMatch 404 /\.git
 RedirectMatch 404 /_to_delete(/|$)
 
-# Directory listings off, everywhere below here.
-Options -Indexes
+# Third-party engines, if they were ever cloned inside the project rather
+# than beside it. They should not be uploaded at all -- see DEPLOYMENT.md.
+RedirectMatch 404 ^/(whisper\.cpp|piper)(/|$)
+
+Options -Indexes -MultiViews

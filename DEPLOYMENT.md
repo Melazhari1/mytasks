@@ -35,13 +35,14 @@ resistance, since all the guards ship as `.htaccess` files.
 
 ## 2. Layout on the server
 
-Keep `api/`, `web/` and `cat-assistant/` siblings. The web client finds the
-API by stripping its own folder off its URL, so this layout needs no
-configuration at all:
+Keep `api/`, `web/` and `cat-assistant/` siblings, and point the document root
+at the **project root** — not at `web/`. The root `.htaccess` serves the client
+at `/` while leaving `api/` and `cat-assistant/` on their own paths, so the app
+lives at `https://your-domain/` and not `https://your-domain/web/`:
 
 ```
 /var/www/mytasks/            <- document root
-├── .htaccess                blocks archives, dotfiles, .git, directory listings
+├── .htaccess                serves web/ at "/", blocks everything non-app
 ├── api/
 │   ├── .htaccess            front-controller rewrite + header policy
 │   ├── .env                 you create this — never in git
@@ -122,21 +123,28 @@ chmod 600 /var/www/mytasks/api/.env
 
 ## 5. Apache virtual host
 
+Worked example for `https://mytasks.melazhari.com/`.
+
+The document root is the **project root**, and the root `.htaccess` rewrites
+everything that is not `api/` or `cat-assistant/` into `web/`. The URL stays
+clean — `https://mytasks.melazhari.com/dashboard.html`, never `/web/...`.
+
 ```apache
 <VirtualHost *:80>
-    ServerName tasks.example.com
-    Redirect permanent / https://tasks.example.com/
+    ServerName mytasks.melazhari.com
+    Redirect permanent / https://mytasks.melazhari.com/
 </VirtualHost>
 
 <VirtualHost *:443>
-    ServerName tasks.example.com
+    ServerName mytasks.melazhari.com
     DocumentRoot /var/www/mytasks
 
     SSLEngine on
-    SSLCertificateFile    /etc/letsencrypt/live/tasks.example.com/fullchain.pem
-    SSLCertificateKeyFile /etc/letsencrypt/live/tasks.example.com/privkey.pem
+    SSLCertificateFile    /etc/letsencrypt/live/mytasks.melazhari.com/fullchain.pem
+    SSLCertificateKeyFile /etc/letsencrypt/live/mytasks.melazhari.com/privkey.pem
 
-    # Required — every guard in this project ships as an .htaccess file.
+    # Required — every guard in this project ships as an .htaccess file, and
+    # the "serve web/ at the root" rewrite is one of them.
     <Directory /var/www/mytasks>
         AllowOverride All
         Require all granted
@@ -148,8 +156,7 @@ chmod 600 /var/www/mytasks/api/.env
         Require all denied
     </DirectoryMatch>
 
-    # Land on the client, not on a directory listing.
-    RedirectMatch ^/$ /web/
+    DirectoryIndex index.html
 
     ErrorLog  ${APACHE_LOG_DIR}/mytasks-error.log
     CustomLog ${APACHE_LOG_DIR}/mytasks-access.log combined
@@ -159,7 +166,33 @@ chmod 600 /var/www/mytasks/api/.env
 ```bash
 a2enmod rewrite headers ssl expires
 a2ensite mytasks && systemctl reload apache2
+certbot --apache -d mytasks.melazhari.com
 ```
+
+Resulting URLs:
+
+| URL | Serves |
+| --- | --- |
+| `https://mytasks.melazhari.com/` | `web/index.html` — the sign-in page |
+| `https://mytasks.melazhari.com/dashboard.html` | `web/dashboard.html` |
+| `https://mytasks.melazhari.com/api/health` | the API front controller |
+| `https://mytasks.melazhari.com/cat-assistant/` | the floating companion |
+| `https://mytasks.melazhari.com/web/...` | the same files as `/...` — kept because cat-assistant imports `../../../web/assets/js/…` |
+
+No code change is needed for any of this. `API_BASE` in `web/assets/js/api.js`
+derives the API path by stripping the page's own folder, which yields `/api`
+from `/dashboard.html` exactly as it yields `/xxp/mytasks/api` from
+`/xxp/mytasks/web/dashboard.html`.
+
+### Why not DocumentRoot = web/ with an Alias
+
+It looks tidier and it is a trap. Under `Alias /api /var/www/mytasks/api` the
+filesystem path stops matching the URL path, so Apache can no longer infer the
+URL prefix for a per-directory rewrite — `api/.htaccess` then needs
+`RewriteBase /api` hardcoded back into it. That is the same hardcoded mount
+path that had to be removed to make the app portable, and it breaks silently
+the next time anything moves. Keeping `api/` a real subdirectory of the
+document root avoids the whole problem.
 
 Also set `expose_php = Off` in `php.ini` so the version stops appearing in
 response headers.
@@ -180,11 +213,18 @@ server {
     add_header Strict-Transport-Security "max-age=15768000; includeSubDomains" always;
     add_header X-Content-Type-Options "nosniff" always;
 
-    location = / { return 302 /web/; }
+    index index.html;
 
     # Everything under /api that is not a real file goes to the front controller.
     location /api/ {
         try_files $uri $uri/ /api/index.php$is_args$args;
+    }
+
+    location /cat-assistant/ { try_files $uri $uri/ =404; }
+
+    # The client is served at the root, with the URL left clean.
+    location / {
+        try_files /web$uri /web$uri/ /web/index.html;
     }
 
     # These must never be served.
